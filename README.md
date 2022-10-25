@@ -10,5 +10,7 @@ make setup
 make present
 make demo
 
+make build
+
 make clean
 ```

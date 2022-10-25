@@ -5,3 +5,5 @@ source "https://rubygems.org"
 gem "rackup", "~> 0.2.2"
 gem "rack-session", "~> 0.3.0"
 gem "sidekiq", "= 7.0.0.beta1"
+
+gem "standard", "~> 1.16"

@@ -51,6 +51,10 @@ demo-sidekiq:
 demo-attach:
 	tmux -L "demo" -CC attach-session
 
+.PHONY: build
+build:
+	bundle exec rubocop
+
 .PHONY: kill-port-9292
 kill-port-9292:
 	lsof -i :9292 | grep IPv4 | sed 's/  */:/g' | cut -d ":" -f 2 | xargs kill -9
@@ -75,6 +79,8 @@ usage:
 	@echo "${YELLOW}make setup${NC}      setup all the things"
 	@echo "${YELLOW}make present${NC}    run presentation slides"
 	@echo "${YELLOW}make demo${NC}       run the demo"
+	@echo
+	@echo "${YELLOW}make build${NC}      build"
 	@echo
 	@echo "${YELLOW}make clean${NC}      clean up"
 	@echo

@@ -1,10 +1,8 @@
 # frozen_string_literal: true
 
-require "sidekiq"
+$LOAD_PATH << File.join(__dir__, "..")
 
-Sidekiq.configure_client do |config|
-  config.redis = {db: 1}
-end
+require "config/environment"
 
 require "sidekiq/web"
 require "rack/session"

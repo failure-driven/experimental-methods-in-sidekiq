@@ -28,6 +28,14 @@ setup: .session.key
 present:
 	slides PRESENTATION.md
 
+.PHONY: sidekiq
+sidekiq:
+	bundle exec sidekiq --concurrency 1 --queue default --require ./config/environment.rb
+
+.PHONY: sidekiq-web
+sidekiq-web:
+	bundle exec rackup bin/sidekiq_web_config.ru
+
 .PHONY: web
 web:
 	open http://localhost:9292
@@ -36,15 +44,20 @@ web:
 demo: demo-sidekiq
 	@echo "${GREEN}Demo goes here ✅${NC}"
 
+# make demo-long-job duration=15
+.PHONY: demo-long-job
+demo-long-job:
+	bundle exec ruby -I . -e 'require "config/environment"; \
+		pp Sidekiq::LongRunningJob.perform_async(ARGV[0].to_i)' \
+		$(or $(duration),$(error Must specify a duration))
+
 .PHONY: demo-sidekiq
 demo-sidekiq:
-	tmux -L "demo" new-session -d "bundle exec rackup bin/sidekiq_web_config.ru"
-	sleep 1
+	tmux -L "demo" new-session -d "make sidekiq-web"
 	tmux -L "demo" rename-window -t "0:0" "sidekiq-web"
+	# tmux -L "demo" split-window -t "0:0" -h "make sidekiq"
 	tmux -L "demo" new-window -d -n 1 -t "0:1"
-	tmux -L "demo" rename-window -t "0:1" "demo"
-	tmux -L "demo" send-keys -t "0:1" "make" Enter
-	tmux -L "demo" send-keys -t "0:1" "open http://localhost:9292" Enter
+	tmux -L "demo" send-keys -t "0:1" "make sidekiq" Enter
 	tmux -L "demo" -CC attach-session
 
 .PHONY: demo-attach

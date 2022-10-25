@@ -4,6 +4,7 @@ GEM
     ast (2.4.2)
     concurrent-ruby (1.1.10)
     connection_pool (2.3.0)
+    filewatcher (2.0.0)
     json (2.6.2)
     parallel (1.22.1)
     parser (3.1.2.1)
@@ -45,15 +46,18 @@ GEM
       rubocop-performance (= 1.14.3)
     unicode-display_width (2.3.0)
     webrick (1.7.0)
+    zeitwerk (2.6.1)
 
 PLATFORMS
   arm64-darwin-21
 
 DEPENDENCIES
+  filewatcher (~> 2.0)
   rack-session (~> 0.3.0)
   rackup (~> 0.2.2)
   sidekiq (= 7.0.0.beta1)
   standard (~> 1.16)
+  zeitwerk (~> 2.6)
 
 BUNDLED WITH
    2.4.0.dev

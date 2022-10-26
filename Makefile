@@ -13,16 +13,21 @@ NC      = \033[0m
 .PHONY: install
 install:
 	@brew bundle || echo "${RED}homebrew not isntalled ❌${NC}"
-	@asdf install || echo "${RED}asdf not installed ❌${NC}"
+	MAKELEVEL=0 asdf install || echo "${RED}asdf not installed ❌${NC}"
 
 .session.key:
 	ruby -e 'require "securerandom"; \
 		File.open(".session.key", "w") {|f| \
 			f.write(SecureRandom.hex(32)) }'
 
+log/output.log:
+	mkdir log
+	touch log/output.log
+
 .PHONY: setup
-setup: .session.key
+setup: .session.key pg-init pg-start
 	redis-cli ping || redis-server --daemonize yes
+	rake db:create db:migrate
 
 .PHONY: present
 present:
@@ -36,9 +41,50 @@ sidekiq:
 sidekiq-web:
 	bundle exec rackup bin/sidekiq_web_config.ru
 
-.PHONY: web
-web:
+.PHONY: view-sidekiq-web
+view-sidekiq-web:
 	open http://localhost:9292
+
+.PHONY: pg-init
+pg-init:
+	PGPORT=5452 asdf exec initdb tmp/postgres -E utf8 || echo "postgres already initialised"
+
+.PHONY: pg-start
+pg-start:
+	PGPORT=5452 asdf exec pg_ctl -D tmp/postgres -l tmp/postgres/logfile start || echo "pg was probably running"
+
+.PHONY: pg-stop
+pg-stop:
+	PGPORT=5452 asdf exec pg_ctl -D tmp/postgres stop -s -m fast || echo "postgres already stopped"
+
+.PHONY: db-reset
+db-reset: pg-stop
+	rm -rf tmp
+	make setup
+	rake db:create db:migrate
+
+.PHONY: db-show
+db-show:
+	bundle exec ruby -I . -e 'require "config/environment"; \
+		pp ActiveRecord::Base.descendants.map(&:all).map{|m| \
+			[m.class.to_s.split("::")[0], m.map(&:attributes)] }'
+
+.PHONY: create-user
+create-user:
+	bundle exec ruby -I . -e 'require "config/environment"; \
+		Sidekiq::CreateUser.perform_async(ARGV.join(" "))' \
+		$(or $(name),$(error Must specify a name))
+
+.PHONY: create-user-outbox
+create-user-outbox:
+	bundle exec ruby -I . -e 'require "config/environment"; \
+		SidekiqOutbox::CreateUser.perform_async(ARGV.join(" "))' \
+		$(or $(name),$(error Must specify a name))
+
+.PHONY: clear-outbox
+clear-outbox:
+	bundle exec ruby -I . -e 'require "config/environment"; Outbox.all.each{|o| \
+		SidekiqOutbox::Worker.perform_async(o.id) }'
 
 .PHONY: demo
 demo: demo-sidekiq
@@ -51,13 +97,26 @@ demo-long-job:
 		pp Sidekiq::LongRunningJob.perform_async(ARGV[0].to_i)' \
 		$(or $(duration),$(error Must specify a duration))
 
-.PHONY: demo-sidekiq
-demo-sidekiq:
+.PHONY: demo-basic
+demo-basic:
 	tmux -L "demo" new-session -d "make sidekiq-web"
 	tmux -L "demo" rename-window -t "0:0" "sidekiq-web"
 	# tmux -L "demo" split-window -t "0:0" -h "make sidekiq"
 	tmux -L "demo" new-window -d -n 1 -t "0:1"
 	tmux -L "demo" send-keys -t "0:1" "make sidekiq" Enter
+	tmux -L "demo" -CC attach-session
+
+.PHONY: demo-sidekiq
+demo-sidekiq:
+	tmux -L "demo" new-session -d "make sidekiq-web"
+	sleep 1
+	tmux -L "demo" rename-window -t "0:0" "sidekiq-web"
+	tmux -L "demo" new-window -d -n 1 -t "0:1"
+	tmux -L "demo" rename-window -t "0:1" "demo"
+	tmux -L "demo" send-keys -t "0:1" "make" Enter
+	tmux -L "demo" split-window -t "0:1" -h "bundle exec sidekiq --require ./config/environment.rb"
+	tmux -L "demo" split-window -t "0:1" -h "watch --interval 1 make db-show"
+	tmux -L "demo" select-layout -t "0:1" even-horizontal
 	tmux -L "demo" -CC attach-session
 
 .PHONY: demo-attach
@@ -74,12 +133,13 @@ kill-port-9292:
 
 .PHONY: demo-down
 demo-down: kill-port-9292
-	tmux -L "demo" kill-session
+	tmux -L "demo" kill-session || echo "${YELLOW}tmux probably not running${NC}"
 
 .PHONY: clean
-clean: demo-down
+clean: demo-down pg-stop
 	rm .session.key
 	killall redis-server
+	rm -rf tmp
 
 .PHONY: usage
 usage:

@@ -5,7 +5,6 @@ $LOAD_PATH << File.join(__dir__, "..")
 require "config/environment"
 
 require "sidekiq/web"
-require "rack/session"
 
 use Rack::Session::Cookie,
   secret: File.read(".session.key"),

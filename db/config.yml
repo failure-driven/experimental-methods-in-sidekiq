@@ -1,0 +1,10 @@
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  pool: 5
+  host: localhost
+  port: 5452
+
+development:
+  <<: *default
+  database: db/experimental_methods_in_sidekiq

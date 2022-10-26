@@ -40,3 +40,7 @@ end
 ActiveRecord::Base.establish_connection(
   db_configuration["development"],
 )
+
+module Environment
+  Que.logger = Logger.new($stdout)
+end

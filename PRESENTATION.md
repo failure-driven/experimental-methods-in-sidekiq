@@ -185,7 +185,11 @@ make outbox-create-user name=matt
 * Que ("keɪ", or "kay") is a queue for Ruby and PostgreSQL
   - _that manages jobs using [advisory locks](http://www.postgresql.org/docs/current/static/explicit-locking.html#ADVISORY-LOCKS)_
 
-https://github.com/failure-driven/experimental-methods-in-sidekiq/blob/main/PRESENTATION.md#enter-que
+---
+
+## Que sequence
+
+https://github.com/failure-driven/experimental-methods-in-sidekiq/blob/main/PRESENTATION.md#que-sequence
 
 ```mermaid
 sequenceDiagram
@@ -213,13 +217,13 @@ end
 ```
 make demo-que
 
-make create-user name=mike
+make create-user-que name=mike
 
 # fail_job_1: "PART 1 killer"
-make create-user name=kevin
+make create-user-qeu name=kevin
 
 # fail_job_2: "die in part 2"
-make create-user name=matt
+make create-user-que name=matt
 ```
 
 ---

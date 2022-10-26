@@ -22,3 +22,4 @@ AllCops:
   MaxFilesInCache: 10000
   Exclude:
     - "Brewfile"
+    - "db/schema.rb"

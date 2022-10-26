@@ -45,6 +45,18 @@ sidekiq-web:
 view-sidekiq-web:
 	open http://localhost:9292
 
+.PHONY: que
+que:
+	bundle exec que
+
+.PHONY: que-web
+que-web:
+	bundle exec rackup bin/que_web_config.ru
+
+.PHONY: view-que-web
+view-que-web:
+	open http://localhost:9292
+
 .PHONY: pg-init
 pg-init:
 	PGPORT=5452 asdf exec initdb tmp/postgres -E utf8 || echo "postgres already initialised"
@@ -68,6 +80,14 @@ db-show:
 	bundle exec ruby -I . -e 'require "config/environment"; \
 		pp ActiveRecord::Base.descendants.map(&:all).map{|m| \
 			[m.class.to_s.split("::")[0], m.map(&:attributes)] }'
+
+.PHONY: db-show-que
+db-show-que:
+	@bundle exec ruby -I . -e 'require "config/environment"; \
+		pp ActiveRecord::Base.descendants.map(&:all).map{|m| \
+			[m.class.to_s.split("::")[0], m.map(&:attributes)] }; \
+		pp ["que_jobs", ActiveRecord::Base.connection.exec_query( \
+			"SELECT job_class, finished_at, args FROM que_jobs;").rows]'
 
 .PHONY: create-user
 create-user:
@@ -116,6 +136,25 @@ demo-sidekiq:
 	tmux -L "demo" send-keys -t "0:1" "make" Enter
 	tmux -L "demo" split-window -t "0:1" -h "bundle exec sidekiq --require ./config/environment.rb"
 	tmux -L "demo" split-window -t "0:1" -h "watch --interval 1 make db-show"
+	tmux -L "demo" select-layout -t "0:1" even-horizontal
+	tmux -L "demo" -CC attach-session
+
+.PHONY: create-user-que
+create-user-que:
+	bundle exec ruby -I . -e 'require "config/environment"; \
+		QueJob::CreateUser.enqueue(ARGV.join(" "))' \
+		$(or $(name),$(error Must specify a name))
+
+.PHONY: demo-que
+demo-que:
+	tmux -L "demo" new-session -d "make que"
+	sleep 1
+	tmux -L "demo" rename-window -t "0:0" "que-web"
+	tmux -L "demo" new-window -d -n 1 -t "0:1"
+	tmux -L "demo" rename-window -t "0:1" "demo"
+	tmux -L "demo" send-keys -t "0:1" "make" Enter
+	tmux -L "demo" split-window -t "0:1" -h "make que"
+	tmux -L "demo" split-window -t "0:1" -h "watch --interval 1 make db-show-que"
 	tmux -L "demo" select-layout -t "0:1" even-horizontal
 	tmux -L "demo" -CC attach-session
 

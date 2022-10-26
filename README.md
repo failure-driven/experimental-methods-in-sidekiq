@@ -62,6 +62,25 @@ make outbox-create-user name=kevin
 make outbox-create-user name=matt
 ```
 
+## Run and monitor que
+
+in seprate windows
+
+```
+make que
+# FAILS
+#   bundle exec que
+#   wrong number of arguments (given 1, expected 0)
+
+make que-web
+watch --interval 1 make db-show-que
+
+make view-que-web
+# open http://localhost:9292
+
+make db-reset
+```
+
 ## Clean up
 
 ```

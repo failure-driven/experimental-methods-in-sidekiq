@@ -2,9 +2,9 @@
 
 How I go about understanding things through experimentation
 
-Michael Milewski
-@saramic github/twitter
-https://failure-driven.com
+- Michael Milewski
+- @saramic github/twitter
+- https://failure-driven.com
 
 ---
 
@@ -540,7 +540,8 @@ Customer --> Flight Srv:
 - how Google does it's distributed transactions [Spanner: Google’s
   Globally-Distributed Database 2012](doc/spanner-osdi2012.pdf)
   - original https://research.google.com/archive/spanner-osdi2012.pdf
-- [links in background doc](BACKGROUND.md)
+- [Event Driven Architecture — 5 Pitfalls to Avoid](https://medium.com/wix-engineering/event-driven-architecture-5-pitfalls-to-avoid-b3ebf885bdb1)
+    - 1. Write to db and then fire event without atomicity
 
 ---
 
